@@ -18,6 +18,15 @@ function generateRandomString() {
 
 };
 
+const emailChecker = (email) => {
+  for (let x in users) {
+    if (email === users[x].email) {
+      return true;
+    }
+  }
+  return false;
+}
+
 
 app.set("view engine", "ejs");
 
@@ -108,6 +117,15 @@ app.post("/logout", (req, res) => {
 })
 
 app.post("/register", (req, res) => {
+  console.log(req.body.email)
+  console.log(req.body.password)
+  if (!req.body.email || !req.body.password) {
+    res.sendStatus(400)
+    return;
+  } else if (emailChecker(req.body.email)) {
+    res.sendStatus(400)
+    return;
+  }
 
   const userID = "user" + generateRandomString()
   const user = { 
@@ -117,7 +135,7 @@ app.post("/register", (req, res) => {
 };
   users[userID] = user;
   res.cookie("user_id", userID);
-  res.redirect("/urls")
+  res.redirect("/urls");
 });
 
 
