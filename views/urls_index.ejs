@@ -17,6 +17,7 @@
         <tr>
           <th scope="col">Short URL</th>
           <th scope="col">Long URL</th>
+          <th scope="col">Created</th>
           <th scope="col">Edit</th>
           <th scope="col">Delete</th>
         </tr>
@@ -26,6 +27,7 @@
           <tr>
             <td><%= url %></td>
             <td><%= urls[url].longURL %></td>
+            <td><%= urls[url].date %></td>
             <td>
               <a href="/urls/<%= url %>">
                 <button style="color: blue; border-color: blue;" type="submit">Edit</button>
@@ -40,6 +42,7 @@
         <% } %>
       </tbody>
     </table>
+    <a href="/urls/new">Create a New Short Link</a>
   </main>
   <!-- Bootstrap JS -->
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>

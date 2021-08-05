@@ -3,6 +3,7 @@ const morgan = require("morgan")
 const cookieSession = require('cookie-session')
 const bodyParser = require("body-parser");
 const bcrypt = require('bcrypt');
+const { emailChecker, generateRandomString, urlsForUser, getUserByEmail, getDateTime } = require("./helpers")
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -10,49 +11,8 @@ const PORT = 8080; // default port 8080
 
 const users = {};
 
-const urlDatabase = {
-  b6UTxQ: {
-      longURL: "https://www.tsn.ca",
-      userID: "aJ48lW"
-  },
-  i3BoGr: {
-      longURL: "https://www.google.ca",
-      userID: "aJ48lW"
-  }
-};
+const urlDatabase = {};
 
-const urlsForUser = (id) => {
-  let output = {};
-  for (let x in urlDatabase) {
-    if (urlDatabase[x].userID === id) {
-      output[x] = urlDatabase[x]
-      
-    }
-  }
-  return output;
-};
-
-// Functions
-
-function generateRandomString() {
-  let string = "";
-  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-  for (let i = 0; i < 6; i++)
-    string += possible.charAt(Math.floor(Math.random() * possible.length));
-
-  return string;
-
-};
-
-const emailChecker = (email) => {
-  for (let x in users) {
-    if (email === users[x].email) {
-      return true;
-    }
-  }
-  return false;
-};
 
 // Settings
 
@@ -77,7 +37,14 @@ app.use(cookieSession({
 // Get request
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  const userID = req.session.user_id
+  if (userID) {
+    res.redirect("/urls");
+    return;
+  } else {
+    res.redirect("/login");
+    return;
+  }
 });
 
 app.get("/login", (req, res) => {
@@ -111,8 +78,7 @@ app.get("/urls", (req, res) => {
     return;
   }
   const user = users[userID]
-  const shortURL = req.params.shortURL;
-  const urls = urlsForUser(userID)
+  const urls = urlsForUser(userID, urlDatabase)
   const templateVars = { 
     urls: urls,
     user
@@ -131,7 +97,6 @@ app.get("/not_logged", (req, res) => {
 app.get("/urls/new", (req, res) => {
   const userID = req.session.user_id
   const user = users[userID]
-  const shortURL = req.params.shortURL;
   const templateVars = { 
     urls: urlDatabase[req.params.shortURL],
     user
@@ -147,14 +112,23 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   const userID = req.session.user_id
   const shortURL = req.params.shortURL
+  let realURL = false;
+  for(x in urlDatabase) {
+    if (shortURL === x) {
+      realURL = true;
+    }
+  };
+  if(!realURL) {
+    res.status(400).send("That URL does not exsist.")
+  }
   if(!userID) {
     res.redirect("/not_logged")
     return;
   }
   let exsist = false;
-  let tempDatabase = urlsForUser(userID)
+  let tempDatabase = urlsForUser(userID, urlDatabase)
   for (let x in tempDatabase) {
-    if (shortURL === x) {
+     if (shortURL === x) {
       exsist = true;
     }
   };
@@ -167,6 +141,7 @@ app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { 
     shortURL: shortURL, 
     longURL: urlDatabase[req.params.shortURL].longURL,
+    date: urlDatabase[req.params.shortURL].date,
     user
   };
   res.render("urls_show", templateVars);
@@ -180,7 +155,7 @@ app.get("/u/:shortURL", (req, res) => {
     }
   }
   if (!exsist) {
-    res.sendStatus(400)
+    res.status(400).send("URL does not exsist")
     return;
   }
   const longURL = urlDatabase[req.params.shortURL].longURL;
@@ -200,7 +175,7 @@ app.get("/hello", (req, res) => {
 app.post("/login", (req, res) => {
   const email = req.body.email
   // check for email address in data base
-  if (!emailChecker(email)) {
+  if (!emailChecker(email, users)) {
     res.status(403).send("Login failed")
     return;
   }
@@ -227,7 +202,7 @@ app.post("/register", (req, res) => {
   if (!req.body.email || !req.body.password) {
     res.status(400).send("Must fill in all fields")
     return;
-  } else if (emailChecker(req.body.email)) {
+  } else if (emailChecker(req.body.email, users)) {
     res.status(400).send("Email already in use")
     return;
   }
@@ -250,20 +225,23 @@ app.post("/urls", (req, res) => {
   const id = generateRandomString();
   const URL = req.body.longURL
   if (!userID) {
-    res.sendStatus(403);
+    res.status(403).send("Must be logged in");
     return;
   }
   if(!URL) {
-    res.sendStatus(403);
+    res.status(403).send("Must enter a URL");
     return;
   }
+  
   const tempObj = {
     [id]: {
       longURL: URL,
-      userID: userID
+      userID: userID,
+      date: getDateTime()
     }
   }
   const tempurlDatabase = Object.assign(urlDatabase, tempObj)
+  console.log(urlDatabase)
   res.redirect("/urls/" + id)
 });
 
