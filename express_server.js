@@ -58,10 +58,12 @@ app.get("/", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  const userID = [req.cookies.user_id]
+  const userIDArray = [req.cookies.user_id]
+  const userID = userIDArray[0];
+  console.log(userID)
   const user = users[userID]
   const templateVars = { user }
-  if (userID[0]) {
+  if (userID) {
     res.redirect("/urls")
     return;
   }
@@ -69,10 +71,11 @@ app.get("/login", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  const userID = [req.cookies.user_id]
+  const userIDArray = [req.cookies.user_id]
+  const userID = userIDArray[0];
   const user = users[userID]
   const templateVars = { user }
-  if (userID[0]) {
+  if (userID) {
     res.redirect("/urls")
     return;
   }
@@ -83,9 +86,9 @@ app.get("/urls", (req, res) => {
   const userID = [req.cookies.user_id]
   const user = users[userID]
   const shortURL = req.params.shortURL;
-  console.log(shortURL)
+  console.log(urlDatabase)
   const templateVars = { 
-    urls: urlDatabase[req.params.shortURL],
+    urls: urlDatabase,
     user
   };
   res.render("urls_index", templateVars);
@@ -93,14 +96,15 @@ app.get("/urls", (req, res) => {
 
 
 app.get("/urls/new", (req, res) => {
-  const userID = [req.cookies.user_id]
+  const userIDArray = [req.cookies.user_id]
+  const userID = userIDArray[0];
   const user = users[userID]
   const shortURL = req.params.shortURL;
   const templateVars = { 
     urls: urlDatabase[req.params.shortURL],
     user
   };
-  if (!userID[0]) {
+  if (!userID) {
     res.redirect("/login")
     return;
   }
@@ -109,7 +113,8 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const userID = [req.cookies.user_id]
+  const userIDArray = [req.cookies.user_id]
+  const userID = userIDArray[0];
   const user = users[userID]
   const templateVars = { 
     shortURL: req.params.shortURL, 
@@ -120,6 +125,16 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.get("/u/:shortURL", (req, res) => {
+  let exsist = false;
+  for (let id in urlDatabase) {
+    if (req.params.shortURL === id) {
+      exsist = true;
+    }
+  }
+  if (!exsist) {
+    res.sendStatus(400)
+    return;
+  }
   const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
@@ -179,11 +194,12 @@ app.post("/register", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  const userID = [req.cookies.user_id]
+  const userIDArray = [req.cookies.user_id]
+  const userID = userIDArray[0];
   const user = users[userID]
   const id = generateRandomString();
   const URL = req.body.longURL
-  if (!userID[0]) {
+  if (!userID) {
     res.sendStatus(403);
     return;
   }
@@ -210,9 +226,10 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 app.post("/urls/:shortURL/update", (req, res) => {
   const id = req.params.shortURL;
-  const userID = [req.cookies.user_id];
+  const userIDArray = [req.cookies.user_id]
+  const userID = userIDArray[0];
   const newURL = req.body.newURL;
-  if (!userID[0]) {
+  if (!userID) {
     res.sendStatus(403);
     return;
   }
