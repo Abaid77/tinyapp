@@ -194,8 +194,9 @@ app.get("/hello", (req, res) => {
 
 app.post("/login", (req, res) => {
   const email = req.body.email
+  // check for email address in data base
   if (!emailChecker(email)) {
-    res.sendStatus(403)
+    res.status(403).send("Login failed")
     return;
   }
   for (let x in users) {
@@ -208,7 +209,7 @@ app.post("/login", (req, res) => {
         return;
       }
      }
-  res.sendStatus(403);
+  res.status(403).send("Login failed");
   return;
 });
 
@@ -219,10 +220,10 @@ app.post("/logout", (req, res) => {
 
 app.post("/register", (req, res) => {
   if (!req.body.email || !req.body.password) {
-    res.sendStatus(400)
+    res.status(400).send("Must fill in all fields")
     return;
   } else if (emailChecker(req.body.email)) {
-    res.sendStatus(400)
+    res.status(400).send("Email already in use")
     return;
   }
 
