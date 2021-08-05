@@ -2,8 +2,11 @@ const express = require("express");
 const morgan = require("morgan")
 const cookieParser = require('cookie-parser')
 const bodyParser = require("body-parser");
+const bcrypt = require('bcrypt');
 const app = express();
 const PORT = 8080; // default port 8080
+
+// Create users and database objects
 
 const users = {};
 
@@ -29,6 +32,8 @@ const urlsForUser = (id) => {
   return output;
 };
 
+// Functions
+
 function generateRandomString() {
   let string = "";
   const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -49,8 +54,10 @@ const emailChecker = (email) => {
   return false;
 };
 
+// Settings
 
 app.set("view engine", "ejs");
+
 
 // Middleware
 
@@ -69,8 +76,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  const userIDArray = [req.cookies.user_id]
-  const userID = userIDArray[0];
+  const userID = [req.cookies.user_id][0]
   const user = users[userID]
   const templateVars = { user }
   if (userID) {
@@ -188,13 +194,14 @@ app.get("/hello", (req, res) => {
 
 app.post("/login", (req, res) => {
   const email = req.body.email
-  const password = req.body.password
   if (!emailChecker(email)) {
     res.sendStatus(403)
     return;
   }
   for (let x in users) {
-    if (email === users[x].email && password === users[x].password) {
+    let compare = false;
+    compare = bcrypt.compareSync(req.body.password, users[x].password)
+    if (email === users[x].email && compare) {
         const userID = users[x].id
         res.cookie("user_id", userID)
         res.redirect("/urls");
@@ -220,10 +227,11 @@ app.post("/register", (req, res) => {
   }
 
   const userID = "user" + generateRandomString()
+  const hashedPassword = bcrypt.hashSync(req.body.password, 10);
   const user = { 
     id: userID, 
     email: req.body.email, 
-    password: req.body.password 
+    password: hashedPassword
 };
   users[userID] = user;
   res.cookie("user_id", userID);
@@ -276,6 +284,8 @@ app.post("/urls/:shortURL/update", (req, res) => {
   urlDatabase[id] = newURL
   res.redirect("/urls")
 }); 
+
+// Server startup
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
