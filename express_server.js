@@ -25,7 +25,7 @@ const emailChecker = (email) => {
     }
   }
   return false;
-}
+};
 
 
 app.set("view engine", "ejs");
@@ -49,6 +49,13 @@ app.use(cookieParser())
 
 app.get("/", (req, res) => {
   res.send("Hello!");
+});
+
+app.get("/login", (req, res) => {
+  const userID = [req.cookies.user_id]
+  const user = users[userID]
+  const templateVars = { user }
+  res.render("login", templateVars)
 });
 
 app.get("/register", (req, res) => {
@@ -106,13 +113,27 @@ app.get("/hello", (req, res) => {
 // Post request
 
 app.post("/login", (req, res) => {
-  const userVal = req.body.username
-  res.cookie("username", userVal);
-  res.redirect("/urls")
-})
+  const email = req.body.email
+  const password = req.body.password
+  if (!emailChecker(email)) {
+    res.sendStatus(403)
+    return;
+  }
+  for (let x in users) {
+    if (email === users[x].email && password === users[x].password) {
+        console.log("workds")
+        const userID = users[x].id
+        res.cookie("user_id", userID)
+        res.redirect("/urls");
+        return;
+      }
+     }
+  res.sendStatus(403);
+  return;
+});
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username")
+  res.clearCookie("user_id")
   res.redirect("/urls")
 })
 
