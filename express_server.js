@@ -55,6 +55,10 @@ app.get("/login", (req, res) => {
   const userID = [req.cookies.user_id]
   const user = users[userID]
   const templateVars = { user }
+  if (userID[0]) {
+    res.redirect("/urls")
+    return;
+  }
   res.render("login", templateVars)
 });
 
@@ -62,6 +66,10 @@ app.get("/register", (req, res) => {
   const userID = [req.cookies.user_id]
   const user = users[userID]
   const templateVars = { user }
+  if (userID[0]) {
+    res.redirect("/urls")
+    return;
+  }
   res.render("register", templateVars)
 })
 
@@ -83,6 +91,11 @@ app.get("/urls/new", (req, res) => {
     urls: urlDatabase,
     user
   };
+  if (!userID[0]) {
+    res.redirect("/login")
+    return;
+  }
+
   res.render("urls_new", templateVars);
 });
 
@@ -121,7 +134,6 @@ app.post("/login", (req, res) => {
   }
   for (let x in users) {
     if (email === users[x].email && password === users[x].password) {
-        console.log("workds")
         const userID = users[x].id
         res.cookie("user_id", userID)
         res.redirect("/urls");
@@ -138,8 +150,6 @@ app.post("/logout", (req, res) => {
 })
 
 app.post("/register", (req, res) => {
-  console.log(req.body.email)
-  console.log(req.body.password)
   if (!req.body.email || !req.body.password) {
     res.sendStatus(400)
     return;
@@ -159,11 +169,15 @@ app.post("/register", (req, res) => {
   res.redirect("/urls");
 });
 
-
-
 app.post("/urls", (req, res) => {
+  const userID = [req.cookies.user_id]
+  const user = users[userID]
   const id = generateRandomString();
   const URL = req.body.longURL
+  if (!userID[0]) {
+    res.sendStatus(403);
+    return;
+  }
   urlDatabase[id] = URL
   res.redirect("/urls/" + id)
 });
