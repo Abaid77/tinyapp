@@ -2,13 +2,12 @@ const urlsForUser = (id, urlDatabase) => {
   let output = {};
   for (let x in urlDatabase) {
     if (urlDatabase[x].userID === id) {
-      output[x] = urlDatabase[x]
+      output[x] = urlDatabase[x];
       
     }
   }
   return output;
 };
-
 
 const generateRandomString = () => {
   let string = "";
@@ -39,18 +38,14 @@ const getUserByEmail = (email, users) => {
     }
   }
   return undefined;
-}
+};
 
 const getDateTime = () => {
   const date = new Date();
   const n = date.toDateString();
   const time = date.toLocaleTimeString();
-  const output = `${n} at ${time}`
+  const output = `${n} at ${time}`;
   return output;
-  }
+};
 
-
-
-
-
-module.exports = { emailChecker, generateRandomString, urlsForUser, getUserByEmail, getDateTime }
+module.exports = { emailChecker, generateRandomString, urlsForUser, getUserByEmail, getDateTime };
