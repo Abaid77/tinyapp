@@ -18,6 +18,17 @@ const urlDatabase = {
   }
 };
 
+const urlsForUser = (id) => {
+  let output = {};
+  for (let x in urlDatabase) {
+    if (urlDatabase[x].userID === id) {
+      output[x] = urlDatabase[x]
+      
+    }
+  }
+  return output;
+};
+
 function generateRandomString() {
   let string = "";
   const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -60,7 +71,6 @@ app.get("/", (req, res) => {
 app.get("/login", (req, res) => {
   const userIDArray = [req.cookies.user_id]
   const userID = userIDArray[0];
-  console.log(userID)
   const user = users[userID]
   const templateVars = { user }
   if (userID) {
@@ -83,16 +93,27 @@ app.get("/register", (req, res) => {
 })
 
 app.get("/urls", (req, res) => {
-  const userID = [req.cookies.user_id]
+  const userID = [req.cookies.user_id][0]
+  if(!userID) {
+    res.redirect("/not_logged")
+    return;
+  }
   const user = users[userID]
   const shortURL = req.params.shortURL;
-  console.log(urlDatabase)
+  const urls = urlsForUser(userID)
   const templateVars = { 
-    urls: urlDatabase,
+    urls: urls,
     user
   };
   res.render("urls_index", templateVars);
 });
+
+app.get("/not_logged", (req, res) => {
+  const userID = [req.cookies.user_id][0]
+  const user = users[userID]
+  const templateVars = { user }
+  res.render("not_logged", templateVars)
+})
 
 
 app.get("/urls/new", (req, res) => {
@@ -113,11 +134,27 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const userIDArray = [req.cookies.user_id]
-  const userID = userIDArray[0];
+  const userID = [req.cookies.user_id][0]
+  const shortURL = req.params.shortURL
+  if(!userID) {
+    res.redirect("/not_logged")
+    return;
+  }
+  let exsist = false;
+  let tempDatabase = urlsForUser(userID)
+  for (let x in tempDatabase) {
+    if (shortURL === x) {
+      exsist = true;
+    }
+  };
+  
+  if (!exsist) {
+    res.send("You can only use your own short URLs!")
+    return;
+  }
   const user = users[userID]
   const templateVars = { 
-    shortURL: req.params.shortURL, 
+    shortURL: shortURL, 
     longURL: urlDatabase[req.params.shortURL].longURL,
     user
   };
@@ -210,24 +247,27 @@ app.post("/urls", (req, res) => {
   const tempObj = {
     [id]: {
       longURL: URL,
-      userID: userID[0]
+      userID: userID
     }
   }
   const tempurlDatabase = Object.assign(urlDatabase, tempObj)
-  console.log(urlDatabase)
   res.redirect("/urls/" + id)
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   const id = req.params.shortURL;
+  const userID = [req.cookies.user_id][0]
+  if (!userID) {
+    res.sendStatus(403);
+    return;
+  }
   delete urlDatabase[id];
   res.redirect("/urls")
 });
 
 app.post("/urls/:shortURL/update", (req, res) => {
   const id = req.params.shortURL;
-  const userIDArray = [req.cookies.user_id]
-  const userID = userIDArray[0];
+  const userID = [req.cookies.user_id][0]
   const newURL = req.body.newURL;
   if (!userID) {
     res.sendStatus(403);
