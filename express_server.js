@@ -7,6 +7,17 @@ const PORT = 8080; // default port 8080
 
 const users = {};
 
+const urlDatabase = {
+  b6UTxQ: {
+      longURL: "https://www.tsn.ca",
+      userID: "aJ48lW"
+  },
+  i3BoGr: {
+      longURL: "https://www.google.ca",
+      userID: "aJ48lW"
+  }
+};
+
 function generateRandomString() {
   let string = "";
   const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -29,11 +40,6 @@ const emailChecker = (email) => {
 
 
 app.set("view engine", "ejs");
-
-const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
-};
 
 // Middleware
 
@@ -76,8 +82,10 @@ app.get("/register", (req, res) => {
 app.get("/urls", (req, res) => {
   const userID = [req.cookies.user_id]
   const user = users[userID]
+  const shortURL = req.params.shortURL;
+  console.log(shortURL)
   const templateVars = { 
-    urls: urlDatabase,
+    urls: urlDatabase[req.params.shortURL],
     user
   };
   res.render("urls_index", templateVars);
@@ -87,8 +95,9 @@ app.get("/urls", (req, res) => {
 app.get("/urls/new", (req, res) => {
   const userID = [req.cookies.user_id]
   const user = users[userID]
+  const shortURL = req.params.shortURL;
   const templateVars = { 
-    urls: urlDatabase,
+    urls: urlDatabase[req.params.shortURL],
     user
   };
   if (!userID[0]) {
@@ -104,14 +113,14 @@ app.get("/urls/:shortURL", (req, res) => {
   const user = users[userID]
   const templateVars = { 
     shortURL: req.params.shortURL, 
-    longURL: urlDatabase[req.params.shortURL],
+    longURL: urlDatabase[req.params.shortURL].longURL,
     user
   };
   res.render("urls_show", templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL]
+  const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
 
@@ -178,7 +187,18 @@ app.post("/urls", (req, res) => {
     res.sendStatus(403);
     return;
   }
-  urlDatabase[id] = URL
+  if(!URL) {
+    res.sendStatus(403);
+    return;
+  }
+  const tempObj = {
+    [id]: {
+      longURL: URL,
+      userID: userID[0]
+    }
+  }
+  const tempurlDatabase = Object.assign(urlDatabase, tempObj)
+  console.log(urlDatabase)
   res.redirect("/urls/" + id)
 });
 
@@ -190,7 +210,12 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 app.post("/urls/:shortURL/update", (req, res) => {
   const id = req.params.shortURL;
-  const newURL = req.body.newURL
+  const userID = [req.cookies.user_id];
+  const newURL = req.body.newURL;
+  if (!userID[0]) {
+    res.sendStatus(403);
+    return;
+  }
   urlDatabase[id] = newURL
   res.redirect("/urls")
 }); 
